@@ -8,7 +8,7 @@ sub STR { EVAL :lang<nqp>, 'return local(str)' }
 sub INT { EVAL :lang<nqp>, 'return local(int)' }
 sub OBJ { EVAL :lang<nqp>, 'return local(Mu)' }
 
-my @modules = @libdirs.map: *.IO.dir(test => /\.moarvm$/).Slip;
+my @modules = @libdirs.map(*.IO.dir(test => /\.moarvm$/).Slip).sort(*.basename);
 
 my $cu := MoarASM::CompUnit.new;
 $cu.add-frame: {
