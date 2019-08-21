@@ -19,7 +19,7 @@ $cu.add-frame: {
     my \R0 = OBJ;
     my \R1 = OBJ;
 
-    my \NQP = STR;
+    my \LANG = STR;
     my \NULL = OBJ;
     my \BOOTInt = OBJ;
     my \BOOTHash = OBJ;
@@ -29,7 +29,7 @@ $cu.add-frame: {
 
     my $info := OBJ;
 
-    op.const_s:     NQP, 'nqp';
+    op.const_s:     LANG, $name;
     op.null:        NULL;
     op.bootint:     BOOTInt;
     op.boothash:    BOOTHash;
@@ -87,7 +87,7 @@ for @modules {
 }
 
     op.const_s:     S0, 'bytecode_cache';
-    op.bindhllsym:  NQP, S0, R0;
+    op.bindhllsym:  LANG, S0, R0;
 
     op.return;
 }
