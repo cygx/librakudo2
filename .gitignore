@@ -1,4 +1,8 @@
+/nqp
+/nqp.exe
 *.moarvm
 *.index
 *bc.[cho]
 *prelude.h
+*.[oa]
+*.dll
