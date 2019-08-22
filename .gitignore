@@ -1,2 +1,4 @@
 *.moarvm
+*.index
 *bc.[cho]
+*prelude.h

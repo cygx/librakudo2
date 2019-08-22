@@ -7,6 +7,7 @@ my $N = 20;
 
 die "Usage:\n  bc.pl <name> [<libdirs> ...}\n" if @ARGV < 2;
 my ($name, @roots) = @ARGV;
+my $index  = "${name}bc.index";
 my $source = "${name}bc.c";
 my $header = "${name}bc.h";
 
@@ -17,17 +18,18 @@ my @modules = sort map { glob "$_/*.moarvm" } @dirs;
 
 my @source;
 my @header;
+my @entries;
 my @index;
 for (@modules) {
     my ($base) = /\/\.\/(.+?)\.moarvm$/;
     my $ident = $base =~ s{[./]}{_}rg;
     $ident = "lib${name}_bc_${ident}";
 
-    push @index, "    { \"$base.moarvm\", $ident, sizeof $ident },";
-
     my $bc = slurp $_;
     my $size = length $bc;
 
+    push @index, "$base.moarvm", $size;
+    push @entries, "    { \"$base.moarvm\", $ident, sizeof $ident },";
     push @source, "const unsigned char ${ident}[$size] = {";
     push @header, "extern const unsigned char ${ident}\[$size];";
     for (my $pos = 0; $pos < length($bc); $pos += $N) {
@@ -46,9 +48,11 @@ push @header,
     '    unsigned size;',
     '};',
     '',
-    "static const struct lib${name}_entry lib${name}_index[] = {", @index, '};',
+    "static const struct lib${name}_entry lib${name}_index[] = {", @entries, '};',
     '';
+push @index, '';
 
+spurt $index, join("\n", @index);
 spurt $source, join("\n", @source);
 spurt $header, join("\n", @header);
 exit;

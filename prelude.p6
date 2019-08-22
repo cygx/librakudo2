@@ -1,14 +1,16 @@
 use MONKEY-SEE-NO-EVAL;
 use MoarASM:from<NQP>;
 use nqp:from<NQP>;
+use nqp;
 
-unit sub MAIN($name, *@libdirs);
+unit sub MAIN(IO() $index);
+
+my $name = ~($index ~~ /^ <(.*)> "bc.index" $/);
+my @modules = $index.lines.rotor(2);
 
 sub STR { EVAL :lang<nqp>, 'return local(str)' }
 sub INT { EVAL :lang<nqp>, 'return local(int)' }
 sub OBJ { EVAL :lang<nqp>, 'return local(Mu)' }
-
-my @modules = @libdirs.map(*.IO.dir(test => /\.moarvm$/).Slip).sort(*.basename);
 
 my $cu := MoarASM::CompUnit.new;
 $cu.add-frame: {
@@ -77,11 +79,11 @@ $cu.add-frame: {
 
     op.create:      R0, BOOTHash;
 
-for @modules {
+for @modules -> ($path, Int() $size) {
     op.create:      R1, ByteArray;
-    op.const_i64:   I0, .s;
+    op.const_i64:   I0, $size;
     op.setelemspos: R1, I0;
-    op.const_s:     S0, .basename;
+    op.const_s:     S0, $path;
     op.bindkey_o:   R0, S0, R1;
     op.null:        R1;
 }
@@ -92,6 +94,16 @@ for @modules {
     op.return;
 }
 
-$cu.assemble.dump("{$name}pre.moarvm");
 
-Nil;
+my $bc := $cu.assemble.bytecode;
+my int $len = nqp::elems($bc);
+
+my $fh = open "{$name}prelude.h", :w;
+LEAVE $fh.close;
+
+$fh.put: "static const unsigned char lib{$name}_prelude[] = \{";
+loop (my int $i = 0; $i < $len; $i = $i + 1) {
+    $fh.print: nqp::atpos_i($bc, $i).fmt('%3u,');
+    $fh.print: "\n" if ($i + 1) %% 20;
+}
+$fh.put: "\n};"
