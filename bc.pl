@@ -1,23 +1,29 @@
 use v5.14;
 use warnings;
 
-use subs qw(slurp spurt);
+use subs qw(subdirs slurp spurt);
 
 my $N = 20;
 
 die "Usage:\n  bc.pl <name> [<libdirs> ...}\n" if @ARGV < 2;
-my ($name, @dirs) = @ARGV;
+my ($name, @roots) = @ARGV;
 my $source = "${name}bc.c";
 my $header = "${name}bc.h";
 
-my @modules = sort map { glob s{[/\\]?$}{/}r . '*.moarvm' } @dirs;
+my @dirs;
+subdirs \@dirs, map { s{[/\\]?$}{/.}r } @roots;
+
+my @modules = sort map { glob "$_/*.moarvm" } @dirs;
 
 my @source;
 my @header;
+my @index;
 for (@modules) {
-    my ($ident) = /([^\/\\]+)\.moarvm$/;
-    $ident =~ s/\./_/;
+    my ($base) = /\/\.\/(.+?)\.moarvm$/;
+    my $ident = $base =~ s{[./]}{_}rg;
     $ident = "lib${name}_bc_${ident}";
+
+    push @index, "    { \"$base.moarvm\", $ident, sizeof $ident },";
 
     my $bc = slurp $_;
     my $size = length $bc;
@@ -32,11 +38,29 @@ for (@modules) {
     push @source, '};'
 }
 push @source, '';
-push @header, '';
+push @header,
+    '',
+    "struct lib${name}_entry {",
+    '    const char *name;',
+    '    const unsigned char *bc;',
+    '    unsigned size;',
+    '};',
+    '',
+    "static const struct lib${name}_entry lib${name}_index[] = {", @index, '};',
+    '';
 
 spurt $source, join("\n", @source);
 spurt $header, join("\n", @header);
 exit;
+
+sub subdirs {
+    my ($acc, @dirs) = @_;
+    for (@dirs) {
+        s{[/\\]?$}{};
+        push @$acc, $_;
+        subdirs($acc, glob "$_/*/");
+    }
+}
 
 sub slurp {
     my ($file) = @_;
