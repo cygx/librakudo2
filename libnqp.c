@@ -13,9 +13,6 @@
 DLLEXPORT void libnqp_init(MVMInstance *vm)
 {
     MVM_vm_run_bytecode(vm, libnqp_prelude, sizeof libnqp_prelude);
-
-    // TODO: memcopy stuff
-
     MVM_vm_run_bytecode(vm, libnqp_bc_ModuleLoader, sizeof libnqp_bc_ModuleLoader);
 }
 

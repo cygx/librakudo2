@@ -20,6 +20,12 @@ my @source;
 my @header;
 my @entries;
 my @index;
+push @source,
+    '#ifdef _WIN32',
+    '#define DLLEXPORT __declspec(dllexport)',
+    '#else',
+    '#define DLLEXPORT',
+    '#endif';
 for (@modules) {
     my ($base) = /\/\.\/(.+?)\.moarvm$/;
     my $ident = $base =~ s{[./]}{_}rg;
@@ -28,9 +34,9 @@ for (@modules) {
     my $bc = slurp $_;
     my $size = length $bc;
 
-    push @index, "$base.moarvm", $size;
+    push @index, "$base.moarvm", $ident, $size;
     push @entries, "    { \"$base.moarvm\", $ident, sizeof $ident },";
-    push @source, "const unsigned char ${ident}[$size] = {";
+    push @source, "DLLEXPORT const unsigned char ${ident}[$size] = {";
     push @header, "extern const unsigned char ${ident}\[$size];";
     for (my $pos = 0; $pos < length($bc); $pos += $N) {
         push @source, join '',
