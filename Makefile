@@ -11,6 +11,10 @@ MOARLIB := $(PREFIX)/bin/libmoar.dll.a
 nqp: nqp.c libnqp.h libnqp.dll.a
 	gcc -O3 -o $@ $< -L. -lnqp
 
+bc:
+	perl bc.pl nqp $(PREFIX)/share/nqp/lib
+	perl6 prelude.p6 nqpbc.index
+
 libnqp.dll.a: nqp.dll
 
 nqp.dll: libnqp.o nqpbc.o $(MOARLIB)
