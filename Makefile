@@ -14,8 +14,8 @@ MOARLIB := $(PREFIX)/bin/libmoar.dll.a
 # RAKUDOBUG!
 export MVM_SPESH_DISABLE = 1
 
-nqp: nqp.c libnqp.h libnqp.dll.a
-	gcc -O3 -o $@ $< -L. -lnqp
+nqp: nqp.c libnqp.a  $(MOARLIB)
+	gcc -O3 -o $@ $^
 
 bc:
 	perl bc.pl nqp $(PREFIX)/share/nqp/lib
@@ -26,10 +26,8 @@ prelude: MoarASM.moarvm
 MoarASM.moarvm: %.moarvm: %.nqp
 	$(NQP) --target=mbc --output=$@ $<
 
-libnqp.dll.a: nqp.dll
-
-nqp.dll: libnqp.o nqpbc.o $(MOARLIB)
-	gcc -shared -o $@ $^ $(LIB:%=-L%) -lmoar -Wl,--out-implib,lib$@.a
+libnqp.a: libnqp.o nqpbc.o
+	ar rcs $@ $^
 
 libnqp.o: nqpbc.h nqpprelude.h $(API_H)
 libnqp.o nqpbc.o: %.o: %.c

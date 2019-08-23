@@ -4,19 +4,13 @@
 #include "nqpbc.h"
 #include "nqpprelude.h"
 
-#ifdef _WIN32
-#define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT
-#endif
-
-DLLEXPORT void libnqp_init(MVMInstance *vm)
+void libnqp_init(MVMInstance *vm)
 {
     MVM_vm_run_bytecode(vm, libnqp_prelude, sizeof libnqp_prelude);
     MVM_vm_run_bytecode(vm, libnqp_bc_ModuleLoader, sizeof libnqp_bc_ModuleLoader);
 }
 
-DLLEXPORT int libnqp_main(int argc, char *argv[])
+int libnqp_main(int argc, char *argv[])
 {
 #ifndef _WIN32
     signal(SIGPIPE, SIG_IGN);

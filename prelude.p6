@@ -10,6 +10,7 @@ my @modules = $index.slurp.lines.rotor(3);
 
 sub STR { EVAL :lang<nqp>, 'return local(str)' }
 sub INT { EVAL :lang<nqp>, 'return local(int)' }
+sub UINT { EVAL :lang<nqp>, 'return local(uint)' }
 sub OBJ { EVAL :lang<nqp>, 'return local(Mu)' }
 
 my $cu := MoarASM::CompUnit.new;
@@ -18,12 +19,13 @@ $cu.add-frame: {
 
     my \S0 = STR;
     my \I0 = INT;
-    my \I1 = INT;
+    my \U0 = UINT;
     my \R0 = OBJ;
     my \R1 = OBJ;
 
     my \LANG = STR;
     my \ZERO = INT;
+    my \UZERO = UINT;
     my \NULL = OBJ;
     my \NULLPTR = OBJ;
     my \BOOTInt = OBJ;
@@ -36,7 +38,6 @@ $cu.add-frame: {
     my $info := OBJ;
 
     op.const_s:     LANG, $name;
-    op.const_i64:   ZERO, 0;
     op.null:        NULL;
     op.bootint:     BOOTInt;
     op.boothash:    BOOTHash;
@@ -97,9 +98,10 @@ $cu.add-frame: {
 for @modules -> ($path, $ident, Int() $size) {
     op.create:      R1, ByteArray;
     op.const_i64:   I0, $size;
+    op.coerce_iu:   U0, I0;
     op.const_s:     S0, $ident;
-    op.findsym:     I1, NULLPTR, S0;
-    op.memread:     R1, ZERO, I0, I1;
+    op.findsym:     I0, NULLPTR, S0;
+    op.memread:     R1, UZERO, U0, I0;
     op.const_s:     S0, $path;
     op.bindkey_o:   R0, S0, R1;
     op.null:        R1;
@@ -114,12 +116,14 @@ for @modules -> ($path, $ident, Int() $size) {
 my $bc := $cu.assemble.bytecode;
 my int $len = nqp::elems($bc);
 
-my $fh = open "{$name}prelude.h", :w;
-LEAVE $fh.close;
+{
+    my $fh = open "{$name}prelude.h", :w;
+    LEAVE $fh.close;
 
-$fh.put: "static const unsigned char lib{$name}_prelude[] = \{";
-loop (my int $i = 0; $i < $len; $i = $i + 1) {
-    $fh.print: nqp::atpos_i($bc, $i).fmt('%3u,');
-    $fh.print: "\n" if ($i + 1) %% 20;
+    $fh.put: "static const unsigned char lib{$name}_prelude[] = \{";
+    loop (my int $i = 0; $i < $len; $i = $i + 1) {
+        $fh.print: nqp::atpos_i($bc, $i).fmt('%3u,');
+        $fh.print: "\n" if ($i + 1) %% 20;
+    }
+    $fh.put: "\n};";
 }
-$fh.put: "\n};";
