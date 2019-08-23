@@ -3,6 +3,7 @@ $(error variable PREFIX not defined)
 endif
 
 PERL6 := $(PREFIX)/bin/perl6
+NQP   := $(PREFIX)/bin/nqp
 
 INC := $(PREFIX)/include
 LIB := $(PREFIX)/bin
@@ -19,8 +20,11 @@ nqp: nqp.c libnqp.h libnqp.dll.a
 bc:
 	perl bc.pl nqp $(PREFIX)/share/nqp/lib
 
-prelude:
+prelude: MoarASM.moarvm
 	$(PERL6) prelude.p6 nqpbc.index
+
+MoarASM.moarvm: %.moarvm: %.nqp
+	$(NQP) --target=mbc --output=$@ $<
 
 libnqp.dll.a: nqp.dll
 
